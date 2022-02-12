@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Windows;
-using System.Windows.Controls;
-using Commons.Music.Midi;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+
+using RtMidi.Core;
+using RtMidi.Core.Devices;
+using RtMidi.Core.Messages;
 
 namespace KeystrokeToMidi
 {
@@ -16,10 +14,10 @@ namespace KeystrokeToMidi
     {
         private string labelText;
         private ICommand buttonCommand;
-        private IMidiAccess access;
-        private IMidiOutput output;
-        public event PropertyChangedEventHandler PropertyChanged;
+        private MidiDeviceManager deviceManager;
+        private List<IMidiOutputDevice> outputDevices;
 
+        public event PropertyChangedEventHandler PropertyChanged;
         public string LabelText
         {
             get { return labelText; }
@@ -41,11 +39,16 @@ namespace KeystrokeToMidi
         public MainWindowModel()
         {
             LabelText = "Hello";
+            outputDevices = new List<IMidiOutputDevice>();
             ButtonCommand = new Command(onButton_Click, CanExecute);
-            access = MidiAccessManager.Default;
-            output = access.OpenOutputAsync(access.Outputs.Last().Id).Result;
 
-            //output.CloseAsync();
+            foreach (var device in MidiDeviceManager.Default.OutputDevices)
+            {
+                var newDevice = device.CreateDevice();
+                newDevice.Open();
+                outputDevices.Add(newDevice);
+            }
+            
         }
         private bool CanExecute(object value)
         {
@@ -54,7 +57,8 @@ namespace KeystrokeToMidi
         private void onButton_Click(object obj)
         {
             LabelText = ":>";
-            output.Send(new byte[] {MidiEvent.Program, 1}, 0, 0, 0);
+            var ProgramChange = new ProgramChangeMessage(RtMidi.Core.Enums.Channel.Channel1, 2);
+            outputDevices[1].Send(ProgramChange);
         }
 
         // This method is called by the Set accessor of each property.  
