@@ -4,27 +4,197 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KeystrokeToMidi"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        x:Name="root"
+        Title="MainWindow" Height="600" Width="800">
     <Window.DataContext>
         <local:MainWindowModel/>
     </Window.DataContext>
-    <Grid HorizontalAlignment="Center"
-          VerticalAlignment="Top"
-          Width="400">
+    <Window.Resources>
+        
+        <ItemsPanelTemplate x:Key="HorizontalItemTemplate">
+            <UniformGrid Columns="4"
+                         HorizontalAlignment="Stretch">
+            </UniformGrid>
+        </ItemsPanelTemplate>
+        
+        <DataTemplate x:Key="OutputDeviceTemplate">
+            <TextBlock VerticalAlignment="Stretch"                 
+                       Text="{Binding Path=Name}"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="MidiConfigTemplate"
+                      DataType="{x:Type local:MidiMessageConfig}">
+            <Grid VerticalAlignment="Center"
+                  HorizontalAlignment="Stretch"
+                  Margin="15">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Viewbox Stretch="Uniform">
+                    <Button Background="SlateGray"
+                            VerticalAlignment="Stretch"
+                            BorderThickness="0"
+                            Command="{Binding DataContext.ButtonCommand, ElementName=root}"
+                            CommandParameter="{Binding}"
+                            Grid.Row="0">
+                        <Button.InputBindings>
+                            <KeyBinding Key="Enter"/>
+                        </Button.InputBindings>
+                    </Button>
+                </Viewbox>
+                <ComboBox Background="LightGray" 
+                          ItemsSource="{Binding MidiMessages}"
+                          SelectedItem="{Binding CurrentMessage}"
+                          Grid.Row="1"/>
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <xctk:ByteUpDown Grid.Column="0"
+                                        Value="{Binding CurrentMessage.Byte1}"
+                                        Maximum="127"
+                                        Minimum="0"/>
+                    <xctk:ByteUpDown Grid.Column="1"
+                                        Value="{Binding CurrentMessage.Byte2}"
+                                        Maximum="127"
+                                        Minimum="0"/>
+                </Grid>
+            </Grid>
+        </DataTemplate>
+        
+    </Window.Resources>
+    
+    <Grid HorizontalAlignment="Stretch"
+                 VerticalAlignment="Stretch">
         <Grid.RowDefinitions>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
         </Grid.RowDefinitions>
-        <Label Grid.Row="0"
-               Grid.Column="0"
-               Content="{Binding LabelText}">
-        </Label>
-        <Button Grid.Row="1"
-                Grid.Column="0"
-                Content="Press Me"
-                Command="{Binding ButtonCommand}"
-                ClickMode="Press">
-        </Button>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="0.5*"/>
+            <ColumnDefinition Width="0.3*"/>
+            <ColumnDefinition Width="0.25*"/>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition/>
+
+        </Grid.ColumnDefinitions>
+        <ComboBox Grid.Row="1"
+                  Grid.Column="0"
+                  HorizontalAlignment="Stretch"
+                  ItemTemplate="{StaticResource OutputDeviceTemplate}"
+                  ItemsSource="{Binding OutputDevices}"
+                  SelectedItem="{Binding CurrentOutputDevice}"/>
+        <ComboBox Grid.Row="1"
+                  Grid.Column="1"
+                  ItemsSource="{Binding EnumValues}"
+                  SelectedItem="{Binding Channel}"/>
+        <TextBlock Text="Columns:"
+                   Grid.Row="1"
+                   Grid.Column="2"
+                   HorizontalAlignment="Right"
+                   Margin="5, 0"/>
+        <xctk:IntegerUpDown Grid.Row="1"
+                            Grid.Column="3"
+                            Value="{Binding ColumnCount}"
+                            Minimum="0"
+                            Maximum="10"/>
+        <Button Content="Add button"
+                x:Name="Add"
+                Focusable="False"
+                Grid.Row="1"
+                Grid.Column="4"
+                Command="{Binding AddOrRemoveCommand}"
+                CommandParameter="Add"/>
+        <Button Content="Remove last button"
+                Focusable="False"
+                x:Name="Remove"
+                Grid.Row="1"
+                Grid.Column="5"
+                Command="{Binding AddOrRemoveCommand}"
+                CommandParameter="Remove"/>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Visible"
+                      Grid.Row="2"
+                      Grid.ColumnSpan="7"
+                      FocusManager.FocusedElement="{Binding ElementName=buttonControl}">
+            <Grid>
+                <Grid.RowDefinitions>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="0.15*"/>
+                </Grid.ColumnDefinitions>
+                <ItemsControl ItemsSource="{Binding MessageConfigs}"
+                              ItemTemplate ="{StaticResource MidiConfigTemplate}"
+                              x:Name="buttonControl"
+                              Focusable="True"
+                              Grid.Column="0"
+                              Background="LightGray"
+                              BorderBrush="Gray"
+                              BorderThickness="5">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="{Binding ColumnCount}"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Bank Up/Down"
+                               TextAlignment="Center"
+                               Background="LightGray"/>
+                    <Grid Grid.Row="1"
+                          VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+                        <Viewbox Stretch="Uniform"
+                                 Grid.Row="0">
+                            <Button Background="Red"
+                                    VerticalAlignment="Stretch"
+                                    BorderThickness="0"
+                                    Command="{Binding BankSelectCommand}"
+                                    CommandParameter=""/>
+                        </Viewbox>
+                        <TextBlock Text="Bank Up"
+                                   Grid.Row="1"
+                                   HorizontalAlignment="Stretch"
+                                   TextAlignment="Center"
+                                   Background="LightGray"/>
+                    </Grid>
+                    <Grid Grid.Row="2"
+                          VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+                        <Viewbox Stretch="Uniform"
+                                 Grid.Row="0">
+                            <Button Background="Red"
+                                    VerticalAlignment="Stretch"
+                                    BorderThickness="0"/>
+                        </Viewbox>
+                        <TextBlock Text="Bank Down"
+                                   Grid.Row="1"
+                                   HorizontalAlignment="Stretch"
+                                   TextAlignment="Center"
+                                   Background="LightGray"/>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </ScrollViewer>
     </Grid>
 </Window>

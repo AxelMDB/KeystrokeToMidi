@@ -1,64 +1,167 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Input;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Collections.ObjectModel;
 
 using RtMidi.Core;
 using RtMidi.Core.Devices;
-using RtMidi.Core.Messages;
+using RtMidi.Core.Enums;
+
+
+using KeystrokeToMidi.Midi;
 
 namespace KeystrokeToMidi
 {
     public class MainWindowModel : INotifyPropertyChanged
     {
-        private string labelText;
-        private ICommand buttonCommand;
-        private MidiDeviceManager deviceManager;
-        private List<IMidiOutputDevice> outputDevices;
 
+        private ObservableCollection<IMidiOutputDevice> outputDevices;
+        private IMidiOutputDevice currentOutputDevice;
+        private ObservableCollection<MidiMessageConfig> messageConfigs;
+        private Channel channel;
+        private int columnCount;
         public event PropertyChangedEventHandler PropertyChanged;
-        public string LabelText
+        private ICommand buttonCommand;
+        private ICommand addOrRemoveCommand;
+        private ICommand bankSelectCommand;
+        public int ColumnCount
         {
-            get { return labelText; }
-            set 
-            { 
-                labelText = value;
+            get => columnCount;
+            set
+            {
+                columnCount = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public Channel Channel
+        {
+            get => channel;
+            set
+            {
+                channel = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public Channel[] EnumValues
+        {
+            get => Enum.GetValues<Channel>();
+        }
+        public ObservableCollection<MidiMessageConfig> MessageConfigs
+        {
+            get => messageConfigs;
+            set
+            {
+                messageConfigs = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public ObservableCollection<IMidiOutputDevice> OutputDevices
+        {
+            get { return outputDevices; }
+            set
+            {
+                outputDevices = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public IMidiOutputDevice CurrentOutputDevice
+        {
+            get => currentOutputDevice;
+            set
+            {
+                currentOutputDevice = value;
                 NotifyPropertyChanged();
             }
         }
         public ICommand ButtonCommand
         {
-            get { return buttonCommand; }
-            private set
+            get => buttonCommand;
+            set
             {
                 buttonCommand = value;
                 NotifyPropertyChanged();
             }
         }
+        public ICommand AddOrRemoveCommand
+        {
+            get => addOrRemoveCommand;
+            private set
+            {
+                addOrRemoveCommand = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public ICommand BankSelectCommand
+        {
+            get => bankSelectCommand;
+            set
+            {
+                bankSelectCommand = value;
+                NotifyPropertyChanged();
+            }
+        }
         public MainWindowModel()
         {
-            LabelText = "Hello";
-            outputDevices = new List<IMidiOutputDevice>();
-            ButtonCommand = new Command(onButton_Click, CanExecute);
 
+
+            MessageConfigs = new ObservableCollection<MidiMessageConfig>();
+            ColumnCount = 8;
+
+            ButtonCommand = new Command(onButton_Click, CanExecute);
+            AddOrRemoveCommand = new Command(addOrRemoveConfig, CanExecute);
+            BankSelectCommand = new Command(BankSelect, CanExecute);
+
+            Channel = EnumValues.First();
+
+            OutputDevices = new ObservableCollection<IMidiOutputDevice>();
             foreach (var device in MidiDeviceManager.Default.OutputDevices)
             {
                 var newDevice = device.CreateDevice();
                 newDevice.Open();
                 outputDevices.Add(newDevice);
             }
-            
+
+            CurrentOutputDevice = OutputDevices.FirstOrDefault();
+
         }
-        private bool CanExecute(object value)
+
+        private void onButton_Click(object sender)
+        {
+            var config = (MidiMessageConfig) sender;
+            var message = config.CurrentMessage;
+            bool success = message.Send(CurrentOutputDevice, Channel);
+        }
+        private void addOrRemoveConfig(object sender)
+        {
+            if (sender.ToString().Equals("Add"))
+            {
+                MessageConfigs.Add(new MidiMessageConfig());
+            }
+            else
+            {
+                if (MessageConfigs.Count != 0) MessageConfigs.RemoveAt(MessageConfigs.Count - 1);
+            }
+        }
+        private void BankSelect(object sender)
+        {
+            MessageConfigs[0].CurrentMessage.Byte1 = 4;
+            foreach (var config in MessageConfigs)
+            { 
+                if (config.CurrentMessage.MessageType == MessageTypes.ProgramChange)
+                {
+                    config.CurrentMessage.Byte1 += 4;
+                }
+            }
+        }
+
+        private bool CanExecute(object obj)
         {
             return true;
-        }
-        private void onButton_Click(object obj)
-        {
-            LabelText = ":>";
-            var ProgramChange = new ProgramChangeMessage(RtMidi.Core.Enums.Channel.Channel1, 2);
-            outputDevices[1].Send(ProgramChange);
+            // ...obj is the optional command parameter.
+            // ...return whether your command can execute.
         }
 
         // This method is called by the Set accessor of each property.  
@@ -70,4 +173,5 @@ namespace KeystrokeToMidi
         }
 
     }
+
 }
