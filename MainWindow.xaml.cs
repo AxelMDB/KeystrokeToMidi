@@ -20,9 +20,24 @@ namespace KeystrokeToMidi
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly double ratio = 4.0 / 3.0;
+        private MainWindowModel ViewModel { get { return DataContext as MainWindowModel; } }
         public MainWindow()
         {
             InitializeComponent();
         }
+
+        private void root_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (e.WidthChanged)
+            {
+                this.Height = e.NewSize.Width / ratio;
+            }
+            else if (e.HeightChanged)
+            {
+                this.Width = e.NewSize.Height * ratio;
+            }
+        }
+
     }
 }

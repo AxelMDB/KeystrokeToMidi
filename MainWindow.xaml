@@ -7,30 +7,28 @@
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
         x:Name="root"
+        SizeChanged="root_SizeChanged"
         Title="MainWindow" Height="600" Width="800">
     <Window.DataContext>
         <local:MainWindowModel/>
     </Window.DataContext>
     <Window.Resources>
-        
         <ItemsPanelTemplate x:Key="HorizontalItemTemplate">
             <UniformGrid Columns="4"
                          HorizontalAlignment="Stretch">
             </UniformGrid>
         </ItemsPanelTemplate>
-        
         <DataTemplate x:Key="OutputDeviceTemplate">
             <TextBlock VerticalAlignment="Stretch"                 
                        Text="{Binding Path=Name}"/>
         </DataTemplate>
-
         <DataTemplate x:Key="MidiConfigTemplate"
                       DataType="{x:Type local:MidiMessageConfig}">
             <Grid VerticalAlignment="Center"
                   HorizontalAlignment="Stretch"
                   Margin="15">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="1*"/>
+                    <RowDefinition/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
@@ -40,10 +38,7 @@
                             BorderThickness="0"
                             Command="{Binding DataContext.ButtonCommand, ElementName=root}"
                             CommandParameter="{Binding}"
-                            Grid.Row="0">
-                        <Button.InputBindings>
-                            <KeyBinding Key="Enter"/>
-                        </Button.InputBindings>
+                            Grid.Row="0">   
                     </Button>
                 </Viewbox>
                 <ComboBox Background="LightGray" 
@@ -66,11 +61,10 @@
                 </Grid>
             </Grid>
         </DataTemplate>
-        
+
     </Window.Resources>
-    
     <Grid HorizontalAlignment="Stretch"
-                 VerticalAlignment="Stretch">
+          VerticalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -84,15 +78,16 @@
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition/>
-
         </Grid.ColumnDefinitions>
-        <ComboBox Grid.Row="1"
+        <ComboBox Name="OutputDevices"
+                  Grid.Row="1"
                   Grid.Column="0"
                   HorizontalAlignment="Stretch"
                   ItemTemplate="{StaticResource OutputDeviceTemplate}"
                   ItemsSource="{Binding OutputDevices}"
                   SelectedItem="{Binding CurrentOutputDevice}"/>
-        <ComboBox Grid.Row="1"
+        <ComboBox Name ="ChannelSelection"
+                  Grid.Row="1"
                   Grid.Column="1"
                   ItemsSource="{Binding EnumValues}"
                   SelectedItem="{Binding Channel}"/>
@@ -101,9 +96,9 @@
                    Grid.Column="2"
                    HorizontalAlignment="Right"
                    Margin="5, 0"/>
-        <xctk:IntegerUpDown Grid.Row="1"
+        <xctk:IntegerUpDown Value="{Binding ColumnCount}"
+                            Grid.Row="1"
                             Grid.Column="3"
-                            Value="{Binding ColumnCount}"
                             Minimum="0"
                             Maximum="10"/>
         <Button Content="Add button"
@@ -123,10 +118,10 @@
         <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Visible"
                       Grid.Row="2"
-                      Grid.ColumnSpan="7"
-                      FocusManager.FocusedElement="{Binding ElementName=buttonControl}">
+                      Grid.ColumnSpan="7">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
@@ -134,66 +129,72 @@
                 </Grid.ColumnDefinitions>
                 <ItemsControl ItemsSource="{Binding MessageConfigs}"
                               ItemTemplate ="{StaticResource MidiConfigTemplate}"
-                              x:Name="buttonControl"
                               Focusable="True"
                               Grid.Column="0"
                               Background="LightGray"
                               BorderBrush="Gray"
-                              BorderThickness="5">
+                              BorderThickness="3">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <UniformGrid Columns="{Binding ColumnCount}"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
-                <Grid Grid.Column="1">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Text="Bank Up/Down"
-                               TextAlignment="Center"
-                               Background="LightGray"/>
-                    <Grid Grid.Row="1"
-                          VerticalAlignment="Center">
+                <Border BorderBrush="Gray" BorderThickness="3"
+                        Grid.Column="1">
+                    <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="auto"/>
-                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                            <RowDefinition/>
                         </Grid.RowDefinitions>
-                        <Viewbox Stretch="Uniform"
-                                 Grid.Row="0">
-                            <Button Background="Red"
-                                    VerticalAlignment="Stretch"
-                                    BorderThickness="0"
-                                    Command="{Binding BankSelectCommand}"
-                                    CommandParameter=""/>
-                        </Viewbox>
-                        <TextBlock Text="Bank Up"
-                                   Grid.Row="1"
-                                   HorizontalAlignment="Stretch"
+                        <TextBlock Text="Bank Up/Down"
                                    TextAlignment="Center"
                                    Background="LightGray"/>
+                        <Grid Grid.Row="1"
+                              VerticalAlignment="Center"
+                              Background="LightGray">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                            </Grid.RowDefinitions>
+                            <Viewbox Stretch="Uniform"
+                                     Grid.Row="0">
+                                <Button Name="Up" Background="SlateGray"
+                                        VerticalAlignment="Stretch"
+                                        BorderThickness="0"
+                                        Command="{Binding BankSelectCommand}"
+                                        CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Name}"/>
+                            </Viewbox>
+                            <TextBlock Text="Bank Up"
+                                       Grid.Row="1"
+                                       HorizontalAlignment="Stretch"
+                                       TextAlignment="Center"
+                                       Background="LightGray"/>
+                        </Grid>
+                        <Grid Grid.Row="2"
+                              VerticalAlignment="Center">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                            </Grid.RowDefinitions>
+                            <Viewbox Stretch="Uniform"
+                                     Grid.Row="0">
+                                <Button Name="Down" 
+                                        Background="SlateGray"
+                                        VerticalAlignment="Stretch"
+                                        Command="{Binding BankSelectCommand}"
+                                        CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Name}"
+                                        BorderThickness="0"/>
+                            </Viewbox>
+                            <TextBlock Text="Bank Down"
+                                       Grid.Row="1"
+                                       HorizontalAlignment="Stretch"
+                                       TextAlignment="Center"
+                                       Background="LightGray"/>
+                        </Grid>
                     </Grid>
-                    <Grid Grid.Row="2"
-                          VerticalAlignment="Center">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="auto"/>
-                            <RowDefinition Height="auto"/>
-                        </Grid.RowDefinitions>
-                        <Viewbox Stretch="Uniform"
-                                 Grid.Row="0">
-                            <Button Background="Red"
-                                    VerticalAlignment="Stretch"
-                                    BorderThickness="0"/>
-                        </Viewbox>
-                        <TextBlock Text="Bank Down"
-                                   Grid.Row="1"
-                                   HorizontalAlignment="Stretch"
-                                   TextAlignment="Center"
-                                   Background="LightGray"/>
-                    </Grid>
-                </Grid>
+                </Border>
             </Grid>
         </ScrollViewer>
     </Grid>

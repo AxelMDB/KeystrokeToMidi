@@ -12,6 +12,7 @@ using RtMidi.Core.Enums;
 
 
 using KeystrokeToMidi.Midi;
+using System.Windows.Controls;
 
 namespace KeystrokeToMidi
 {
@@ -147,16 +148,32 @@ namespace KeystrokeToMidi
         }
         private void BankSelect(object sender)
         {
-            MessageConfigs[0].CurrentMessage.Byte1 = 4;
-            foreach (var config in MessageConfigs)
-            { 
-                if (config.CurrentMessage.MessageType == MessageTypes.ProgramChange)
-                {
-                    config.CurrentMessage.Byte1 += 4;
-                }
-            }
-        }
+            var buttonName = (string) sender;
 
+            var programConfigs = MessageConfigs.Where(c => c.CurrentMessage.MessageType == MessageTypes.ProgramChange);
+
+            int? minimum = null;
+            int maximum = 0;
+
+            foreach (var config in programConfigs)
+            {
+                var current = config.CurrentMessage;
+                if (current.Byte1 > maximum) maximum = current.Byte1;
+                if (current.Byte1 < minimum || minimum == null) minimum = current.Byte1;
+            }
+
+            int change = maximum - (int) minimum + 1;
+
+            if (buttonName.Equals("Down")) change *= -1;
+
+            if (minimum + change < 0 || maximum + change > 127) return;
+
+            foreach (var config in programConfigs)
+            {
+                config.CurrentMessage.Byte1 += (sbyte) change;
+            }
+
+        }
         private bool CanExecute(object obj)
         {
             return true;
