@@ -13,21 +13,39 @@ using RtMidi.Core.Enums;
 
 using KeystrokeToMidi.Midi;
 using System.Windows.Controls;
+using KeyboardKey = System.Windows.Input.Key;
 
 namespace KeystrokeToMidi
 {
     public class MainWindowModel : INotifyPropertyChanged
     {
-
+        #region Properties
         private ObservableCollection<IMidiOutputDevice> outputDevices;
         private IMidiOutputDevice currentOutputDevice;
         private ObservableCollection<MidiMessageConfig> messageConfigs;
         private Channel channel;
         private int columnCount;
-        public event PropertyChangedEventHandler PropertyChanged;
+        private bool isEnabled;
+        private KeyboardKey bankUpBinding;
+        private KeyboardKey bankDownBinding;
         private ICommand buttonCommand;
         private ICommand addOrRemoveCommand;
         private ICommand bankSelectCommand;
+        private ICommand rescanCommand;
+        public event PropertyChangedEventHandler PropertyChanged;
+        public bool IsEnabled
+        {
+            get => isEnabled;
+            set
+            {
+                isEnabled = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public static KeyboardKey[] Keys
+        {
+            get => (KeyboardKey[]) Enum.GetValues(typeof(KeyboardKey));
+        }
         public int ColumnCount
         {
             get => columnCount;
@@ -77,6 +95,24 @@ namespace KeystrokeToMidi
                 NotifyPropertyChanged();
             }
         }
+        public KeyboardKey BankUpBinding
+        {
+            get => bankUpBinding;
+            set
+            {
+                bankUpBinding = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public KeyboardKey BankDownBinding
+        {
+            get => bankDownBinding;
+            set
+            {
+                bankDownBinding = value;
+                NotifyPropertyChanged();
+            }
+        }
         public ICommand ButtonCommand
         {
             get => buttonCommand;
@@ -104,29 +140,29 @@ namespace KeystrokeToMidi
                 NotifyPropertyChanged();
             }
         }
+        public ICommand RescanCommand
+        {
+            get => rescanCommand;
+            set
+            {
+                rescanCommand = value;
+                NotifyPropertyChanged();
+            }
+        }
+        #endregion
         public MainWindowModel()
         {
-
-
             MessageConfigs = new ObservableCollection<MidiMessageConfig>();
-            ColumnCount = 8;
+            ColumnCount = 4;
 
             ButtonCommand = new Command(onButton_Click, CanExecute);
             AddOrRemoveCommand = new Command(addOrRemoveConfig, CanExecute);
             BankSelectCommand = new Command(BankSelect, CanExecute);
+            RescanCommand = new Command(Rescan, CanExecute);
 
             Channel = EnumValues.First();
 
-            OutputDevices = new ObservableCollection<IMidiOutputDevice>();
-            foreach (var device in MidiDeviceManager.Default.OutputDevices)
-            {
-                var newDevice = device.CreateDevice();
-                newDevice.Open();
-                outputDevices.Add(newDevice);
-            }
-
-            CurrentOutputDevice = OutputDevices.FirstOrDefault();
-
+            Rescan();
         }
 
         private void onButton_Click(object sender)
@@ -151,18 +187,12 @@ namespace KeystrokeToMidi
             var buttonName = (string) sender;
 
             var programConfigs = MessageConfigs.Where(c => c.CurrentMessage.MessageType == MessageTypes.ProgramChange);
+            if (!programConfigs.Any()) return;
 
-            int? minimum = null;
-            int maximum = 0;
+            int minimum = programConfigs.Min().CurrentMessage.Byte1;
+            int maximum = programConfigs.Max().CurrentMessage.Byte1;
 
-            foreach (var config in programConfigs)
-            {
-                var current = config.CurrentMessage;
-                if (current.Byte1 > maximum) maximum = current.Byte1;
-                if (current.Byte1 < minimum || minimum == null) minimum = current.Byte1;
-            }
-
-            int change = maximum - (int) minimum + 1;
+            int change = maximum - minimum + 1;
 
             if (buttonName.Equals("Down")) change *= -1;
 
@@ -173,6 +203,30 @@ namespace KeystrokeToMidi
                 config.CurrentMessage.Byte1 += (sbyte) change;
             }
 
+        }
+        public void On_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (!IsEnabled) return;
+            var config = MessageConfigs.Where(c => c.CurrentKey == e.Key).FirstOrDefault();
+            if (config != null) onButton_Click(config);
+            else
+            {
+                if (e.Key == BankUpBinding) BankSelect("Up");
+                else if (e.Key == BankDownBinding) BankSelect("Down");
+            }
+        }
+        public void Rescan(object sender = null)
+        {
+            OutputDevices = new ObservableCollection<IMidiOutputDevice>();
+            var manager = MidiDeviceManager.Default;
+            foreach (var device in manager.OutputDevices)
+            {
+                var newDevice = device.CreateDevice();
+                newDevice.Open();
+                outputDevices.Add(newDevice);
+            }
+
+            CurrentOutputDevice = OutputDevices.FirstOrDefault();
         }
         private bool CanExecute(object obj)
         {

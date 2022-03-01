@@ -15,7 +15,7 @@ namespace KeystrokeToMidi.Midi
         ProgramChange,
         ControlChange
     }
-    public interface IMidiMessage
+    public interface IMidiMessage : IComparable
     {
         public MessageTypes MessageType { get; }
         public sbyte Byte1 { get; set; }

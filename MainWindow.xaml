@@ -5,9 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KeystrokeToMidi"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:sysinput="clr-namespace:System.Windows.Input;assembly=netstandard"
         mc:Ignorable="d"
         x:Name="root"
         SizeChanged="root_SizeChanged"
+        Keyboard.KeyDown="root_KeyDown"
         Title="MainWindow" Height="600" Width="800">
     <Window.DataContext>
         <local:MainWindowModel/>
@@ -31,6 +33,7 @@
                     <RowDefinition/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Viewbox Stretch="Uniform">
                     <Button Background="SlateGray"
@@ -38,7 +41,7 @@
                             BorderThickness="0"
                             Command="{Binding DataContext.ButtonCommand, ElementName=root}"
                             CommandParameter="{Binding}"
-                            Grid.Row="0">   
+                            Grid.Row="0">
                     </Button>
                 </Viewbox>
                 <ComboBox Background="LightGray" 
@@ -59,9 +62,10 @@
                                         Maximum="127"
                                         Minimum="0"/>
                 </Grid>
+                <ComboBox Grid.Row="3" ItemsSource="{Binding Keys}"
+                          SelectedItem="{Binding CurrentKey}"/>
             </Grid>
         </DataTemplate>
-
     </Window.Resources>
     <Grid HorizontalAlignment="Stretch"
           VerticalAlignment="Stretch">
@@ -72,12 +76,14 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
+            <ColumnDefinition Width="0.4*"/>
             <ColumnDefinition Width="0.5*"/>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="0.3*"/>
-            <ColumnDefinition Width="0.25*"/>
-            <ColumnDefinition Width="auto"/>
-            <ColumnDefinition Width="auto"/>
-            <ColumnDefinition/>
+            <ColumnDefinition Width="0.8*"/>
+            <ColumnDefinition Width="0.8*"/>
+            <ColumnDefinition Width="0.1*"/>
         </Grid.ColumnDefinitions>
         <ComboBox Name="OutputDevices"
                   Grid.Row="1"
@@ -86,39 +92,51 @@
                   ItemTemplate="{StaticResource OutputDeviceTemplate}"
                   ItemsSource="{Binding OutputDevices}"
                   SelectedItem="{Binding CurrentOutputDevice}"/>
+        <Button Content="Rescan" 
+                Background="IndianRed"
+                Grid.Row="1"
+                Grid.Column="1"
+                Command="{Binding RescanCommand}"/>
         <ComboBox Name ="ChannelSelection"
                   Grid.Row="1"
-                  Grid.Column="1"
+                  Grid.Column="2"
                   ItemsSource="{Binding EnumValues}"
                   SelectedItem="{Binding Channel}"/>
+        <CheckBox Content="Enabled"
+                  Grid.Row="1"
+                  Grid.Column="3"
+                  IsChecked="{Binding IsEnabled}"
+                  VerticalAlignment="Center"
+                  Margin="5,0"/>
         <TextBlock Text="Columns:"
                    Grid.Row="1"
-                   Grid.Column="2"
+                   Grid.Column="4"
+                   VerticalAlignment="Center"
                    HorizontalAlignment="Right"
-                   Margin="5, 0"/>
+                   Margin="5,0"/>
         <xctk:IntegerUpDown Value="{Binding ColumnCount}"
                             Grid.Row="1"
-                            Grid.Column="3"
+                            Grid.Column="5"
                             Minimum="0"
                             Maximum="10"/>
         <Button Content="Add button"
                 x:Name="Add"
                 Focusable="False"
                 Grid.Row="1"
-                Grid.Column="4"
+                Grid.Column="6"
                 Command="{Binding AddOrRemoveCommand}"
                 CommandParameter="Add"/>
         <Button Content="Remove last button"
                 Focusable="False"
                 x:Name="Remove"
                 Grid.Row="1"
-                Grid.Column="5"
+                Grid.Column="7"
                 Command="{Binding AddOrRemoveCommand}"
                 CommandParameter="Remove"/>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Visible"
                       Grid.Row="2"
-                      Grid.ColumnSpan="7">
+                      Grid.ColumnSpan="9">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition/>
@@ -142,19 +160,24 @@
                 </ItemsControl>
                 <Border BorderBrush="Gray" BorderThickness="3"
                         Grid.Column="1">
-                    <Grid>
+                    <Grid Background="LightGray">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition/>
                             <RowDefinition/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Bank Up/Down"
+                        <Border Grid.Row="0"
+                                BorderBrush="DarkGray"
+                                BorderThickness="1">
+                            <TextBlock Text="Bank Up/Down"
                                    TextAlignment="Center"
-                                   Background="LightGray"/>
+                                       Background="#ededed"/>
+                        </Border>
                         <Grid Grid.Row="1"
                               VerticalAlignment="Center"
-                              Background="LightGray">
+                              Background="#ededed">
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"/>
                                 <RowDefinition Height="auto"/>
                                 <RowDefinition Height="auto"/>
                             </Grid.RowDefinitions>
@@ -166,15 +189,22 @@
                                         Command="{Binding BankSelectCommand}"
                                         CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Name}"/>
                             </Viewbox>
-                            <TextBlock Text="Bank Up"
-                                       Grid.Row="1"
-                                       HorizontalAlignment="Stretch"
-                                       TextAlignment="Center"
-                                       Background="LightGray"/>
+                            <Border Grid.Row="1"
+                                    BorderThickness="1"
+                                    BorderBrush="DarkGray">
+                                <TextBlock Text="Bank Up"
+                                           HorizontalAlignment="Stretch"
+                                           TextAlignment="Center"/>
+                            </Border>
+                            <ComboBox Grid.Row="2"
+                                      ItemsSource="{Binding Keys}"
+                                      SelectedItem="{Binding BankUpBinding}"/>
                         </Grid>
                         <Grid Grid.Row="2"
-                              VerticalAlignment="Center">
+                              VerticalAlignment="Center"
+                              Background="#ededed">
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"/>
                                 <RowDefinition Height="auto"/>
                                 <RowDefinition Height="auto"/>
                             </Grid.RowDefinitions>
@@ -187,11 +217,16 @@
                                         CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Name}"
                                         BorderThickness="0"/>
                             </Viewbox>
-                            <TextBlock Text="Bank Down"
-                                       Grid.Row="1"
-                                       HorizontalAlignment="Stretch"
-                                       TextAlignment="Center"
-                                       Background="LightGray"/>
+                            <Border Grid.Row="1"
+                                    BorderThickness="1"
+                                    BorderBrush="DarkGray">
+                                <TextBlock Text="Bank Down"
+                                           HorizontalAlignment="Stretch"
+                                           TextAlignment="Center"/>
+                            </Border>
+                            <ComboBox Grid.Row="2"
+                                      ItemsSource="{Binding Keys}"
+                                      SelectedItem="{Binding BankDownBinding}"/>
                         </Grid>
                     </Grid>
                 </Border>

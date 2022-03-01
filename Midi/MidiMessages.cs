@@ -57,16 +57,44 @@ namespace KeystrokeToMidi.Midi
             ProgramChangeMessage message = new ProgramChangeMessage(channel, Byte1);
             return device.Send(message);
         }
-
+        public int CompareTo(object other)
+        {
+            if (other == null) return 1;
+            ProgramChange _other = other as ProgramChange;
+            if (_other != null)
+                return this.Byte1.CompareTo(_other.Byte1);
+            else
+                throw new ArgumentException("Object is not Program Change");
+        }
         private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
-    public class ControlChange : IMidiMessage
+    public class ControlChange : IMidiMessage, INotifyPropertyChanged
     {
-        public sbyte Byte1 { get; set; }
-        public sbyte Byte2 { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+        private sbyte byte1;
+        private sbyte byte2;
+        public sbyte Byte1
+        {
+            get => byte1;
+            set
+            {
+                byte1 = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public sbyte Byte2
+        {
+            get => byte2;
+            set
+            {
+                byte2 = value;
+                NotifyPropertyChanged();
+            }
+        }
+
         public MessageTypes MessageType { get { return MessageTypes.ControlChange; } }
         
         public ControlChange()
@@ -88,6 +116,19 @@ namespace KeystrokeToMidi.Midi
         {
             ControlChangeMessage message = new ControlChangeMessage(channel, Byte1, Byte2);
             return device.Send(message);
+        }
+        public int CompareTo(object other)
+        {
+            if (other == null) return 1;
+            ControlChange _other = other as ControlChange;
+            if (_other != null)
+                return this.Byte1.CompareTo(_other.Byte1);
+            else
+                throw new ArgumentException("Object is not Control Change");
+        }
+        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

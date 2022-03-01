@@ -39,5 +39,9 @@ namespace KeystrokeToMidi
             }
         }
 
+        private void root_KeyDown(object sender, KeyEventArgs e)
+        {
+            ViewModel.On_KeyDown(sender, e);
+        }
     }
 }
