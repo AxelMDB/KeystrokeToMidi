@@ -12,25 +12,43 @@ namespace KeystrokeToMidi
     public class MidiMessageConfig : INotifyPropertyChanged, IComparable
     {
         public event PropertyChangedEventHandler PropertyChanged;
-        private IMidiMessage midiMessage;
+        private IMidiMessage currentMessage;
         private Key currentKey;
-        private List<IMidiMessage> midiMessages = new()
+        private MessageTypes currentMessageType;
+        public static Key[] Keys
         {
-            new ProgramChange(),
-            new ControlChange(),
-        };
+            get => (Key[]) Enum.GetValues(typeof(Key));
+        }
+        public static MessageTypes[] MessageTypes
+        {
+            get => (MessageTypes[])Enum.GetValues(typeof(MessageTypes));
+        }
         public IMidiMessage CurrentMessage
         {
-            get => midiMessage;
+            get => currentMessage;
             set
             {
-                midiMessage = value;
+                currentMessage = value;
                 NotifyPropertyChanged();
             }
         }
-        public Key[] Keys
+        public MessageTypes CurrentMessageType
         {
-            get => (Key[]) Enum.GetValues(typeof(Key));
+            get => currentMessageType;
+            set
+            {
+                currentMessageType = value;
+                switch (value)
+                {
+                    case Midi.MessageTypes.ProgramChange:
+                        CurrentMessage = new ProgramChange();
+                        break;
+                    case Midi.MessageTypes.ControlChange:
+                        CurrentMessage = new ControlChange();
+                        break;
+                }
+                NotifyPropertyChanged();
+            }
         }
         public Key CurrentKey
         {
@@ -41,14 +59,10 @@ namespace KeystrokeToMidi
                 NotifyPropertyChanged();
             }
         }
-        public List<IMidiMessage> MidiMessages
-        {
-            get => midiMessages;
-        }
         public MidiMessageConfig()
         {
-            CurrentMessage = MidiMessages.FirstOrDefault();
             CurrentKey = Keys.First();
+            CurrentMessageType = MessageTypes.First();
         }
         public int CompareTo(object other)
         {
@@ -57,9 +71,8 @@ namespace KeystrokeToMidi
             if (_other != null)
                 return this.CurrentMessage.CompareTo(_other.CurrentMessage);
             else
-                throw new ArgumentException("Object is not Program Change");
+                throw new ArgumentException("Object is not MidiMessageConfig");
         }
-
         private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

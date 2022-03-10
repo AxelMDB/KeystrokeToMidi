@@ -14,6 +14,7 @@ using RtMidi.Core.Enums;
 using KeystrokeToMidi.Midi;
 using System.Windows.Controls;
 using KeyboardKey = System.Windows.Input.Key;
+using Microsoft.Win32;
 
 namespace KeystrokeToMidi
 {
@@ -32,6 +33,8 @@ namespace KeystrokeToMidi
         private ICommand addOrRemoveCommand;
         private ICommand bankSelectCommand;
         private ICommand rescanCommand;
+        private ICommand savePresetCommand;
+        private ICommand loadPresetCommand;
         public event PropertyChangedEventHandler PropertyChanged;
         public bool IsEnabled
         {
@@ -149,6 +152,24 @@ namespace KeystrokeToMidi
                 NotifyPropertyChanged();
             }
         }
+        public ICommand SavePresetCommand
+        {
+            get => savePresetCommand;
+            set
+            {
+                savePresetCommand = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public ICommand LoadPresetCommand
+        {
+            get => loadPresetCommand;
+            set
+            {
+                loadPresetCommand = value;
+                NotifyPropertyChanged();
+            }
+        }
         #endregion
         public MainWindowModel()
         {
@@ -156,9 +177,11 @@ namespace KeystrokeToMidi
             ColumnCount = 4;
 
             ButtonCommand = new Command(onButton_Click, CanExecute);
-            AddOrRemoveCommand = new Command(addOrRemoveConfig, CanExecute);
+            AddOrRemoveCommand = new Command(AddOrRemoveConfig, CanExecute);
             BankSelectCommand = new Command(BankSelect, CanExecute);
             RescanCommand = new Command(Rescan, CanExecute);
+            SavePresetCommand = new Command(SavePreset, CanExecute);
+            LoadPresetCommand = new Command(LoadPreset, CanExecute);
 
             Channel = EnumValues.First();
 
@@ -171,7 +194,7 @@ namespace KeystrokeToMidi
             var message = config.CurrentMessage;
             bool success = message.Send(CurrentOutputDevice, Channel);
         }
-        private void addOrRemoveConfig(object sender)
+        private void AddOrRemoveConfig(object sender)
         {
             if (sender.ToString().Equals("Add"))
             {
@@ -215,7 +238,7 @@ namespace KeystrokeToMidi
                 else if (e.Key == BankDownBinding) BankSelect("Down");
             }
         }
-        public void Rescan(object sender = null)
+        private void Rescan(object sender = null)
         {
             OutputDevices = new ObservableCollection<IMidiOutputDevice>();
             var manager = MidiDeviceManager.Default;
@@ -227,6 +250,32 @@ namespace KeystrokeToMidi
             }
 
             CurrentOutputDevice = OutputDevices.FirstOrDefault();
+        }
+        private void SavePreset(object sender)
+        {
+            Preset configs = new(MessageConfigs, ColumnCount, Channel, BankUpBinding, BankDownBinding);
+            SaveFileDialog saveDialog = new();
+            saveDialog.Filter = "XML files | *.xml";
+            if (saveDialog.ShowDialog() == true)
+            {
+                GenericXMLSerializer.WriteConfigs(configs, saveDialog.FileName);
+            }
+
+        }
+        private void LoadPreset(object sender)
+        {
+            OpenFileDialog openDialog = new();
+            openDialog.Filter = "XML files | *.xml";
+            if (openDialog.ShowDialog() == true)
+            {
+                Preset preset = GenericXMLSerializer.Read<Preset>(openDialog.FileName);
+                MessageConfigs = new ObservableCollection<MidiMessageConfig>(preset.Configs);
+                ColumnCount = preset.ColumnCount;
+                Channel = preset.Channel;
+                BankUpBinding = preset.BankUpKey;
+                BankDownBinding = preset.BankDownKey;
+            }
+
         }
         private bool CanExecute(object obj)
         {

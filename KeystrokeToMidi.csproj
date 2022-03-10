@@ -10,6 +10,7 @@
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.2.0" />
     <PackageReference Include="managed-midi" Version="1.9.14" />
     <PackageReference Include="RtMidi.Core" Version="1.0.51" />
+	<PackageReference Include="ExtendedXmlSerializer" Version="3.7.6" />
   </ItemGroup>
 
 </Project>

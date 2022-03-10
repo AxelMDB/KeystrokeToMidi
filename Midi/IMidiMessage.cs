@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using RtMidi.Core;
-using RtMidi.Core.Messages;
 using RtMidi.Core.Enums;
 using RtMidi.Core.Devices;
 
